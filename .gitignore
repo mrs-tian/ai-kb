@@ -1,0 +1,37 @@
+# --- Python / backend ---
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.py[cod]
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.env
+backend/data/
+backend/uploads/
+
+# --- Node / frontend ---
+admin-web/node_modules/
+admin-web/dist/
+uni-app/node_modules/
+uni-app/dist/
+uni-app/unpackage/
+
+# --- 环境变量（含密钥，勿提交）---
+.env
+.env.local
+.env.*.local
+*.local
+
+# --- 系统与编辑器 ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+
+# --- 构建与缓存 ---
+*.tsbuildinfo
+.cache/
+.turbo/

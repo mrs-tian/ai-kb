@@ -1,0 +1,57 @@
+---
+description: 智问 AI 知识库 Demo 项目总览、文档索引与进度（会话必读）
+alwaysApply: true
+---
+
+# ai-kb-demo 项目上下文
+
+## 是什么
+
+**智问 · AI 知识库助手** — 作品集 / 副业 Demo。
+
+- 管理端上传文档 → 构建知识库 → RAG 智能问答
+- 终端用户（H5 / 小程序，后续）基于知识库提问
+
+## 仓库结构
+
+```
+ai-kb-demo/
+├── docs/           config.md、execution-plan.md（项目级）
+├── backend/        Python FastAPI + RAG（代码+文档）
+├── admin-web/      Vue3 Element Plus 管理后台
+└── uni-app/        暂缓（Phase 6）
+```
+
+## 技术栈
+
+| 层 | 技术 |
+|----|------|
+| 后端 | Python 3.11+、FastAPI、SQLAlchemy、Alembic |
+| 后台 | Vue3、Vite、TS、Element Plus、Pinia |
+| 移动 | uni-app Vue3（未开始） |
+| AI | DeepSeek LLM + Embedding |
+| DB | SQLite（Demo） |
+
+## 文档入口
+
+- 配置/启动/部署：`docs/config.md`
+- 执行顺序：`docs/execution-plan.md`
+- 后端：`backend/README.md` → database / modules / api-admin / api-public
+- 管理端：`admin-web/README.md` → pages-modules / api-integration
+
+## 进度（必读）
+
+**开始任何开发前，先读取并遵循 `.cursor/progress.md` 中的当前阶段与 checklist。**
+
+完成一个 Phase 或关键步骤后，更新 `.cursor/progress.md`（勾选项、当前阶段、里程碑日志、最后更新日期）。
+
+## 开发约定
+
+- 文档定稿前不写业务代码；用户说「进入开发」或「开始 Phase N」再动手
+- API 统一响应 `{ code, message, data }`；管理端 `/api/admin/*`，C 端 `/api/public/*`
+- 密钥仅 `.env`，不提交 Git
+- 优先最小可用 diff，匹配现有文档，不擅自扩大范围
+
+## 当前阶段（摘要）
+
+Phase 0 文档定稿 — **编码未开始**。详见 `.cursor/progress.md`。

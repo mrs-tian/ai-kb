@@ -1,0 +1,15 @@
+[Unit]
+Description=智问 AI 知识库 FastAPI (uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/srv/ai-kb-demo/backend
+EnvironmentFile=/srv/ai-kb-demo/backend/.env
+ExecStart=/srv/ai-kb-demo/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001 --proxy-headers
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
