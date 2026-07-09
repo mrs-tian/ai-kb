@@ -1,9 +1,23 @@
 {
   "pages": [
     {
-      "path": "pages/index/index",
+      "path": "pages/home/home",
       "style": {
-        "navigationBarTitleText": "智问知识库"
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "智问"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationBarBackgroundColor": "#0f0c29"
+      }
+    },
+    {
+      "path": "pages/kb/list",
+      "style": {
+        "navigationBarTitleText": "知识库"
       }
     },
     {
@@ -14,9 +28,9 @@
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "black",
+    "navigationBarTextStyle": "white",
     "navigationBarTitleText": "智问 · AI 知识库",
-    "navigationBarBackgroundColor": "#FFFFFF",
-    "backgroundColor": "#F5F7FA"
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "backgroundColor": "#0f0c29"
   }
 }

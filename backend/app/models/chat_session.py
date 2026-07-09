@@ -19,6 +19,10 @@ class ChatSession(Base, TimestampMixin):
     title: Mapped[str | None] = mapped_column(String(128), nullable=True)
     client_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     client_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("admin_user.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     knowledge_base = relationship("KnowledgeBase", back_populates="chat_sessions")
     messages = relationship(

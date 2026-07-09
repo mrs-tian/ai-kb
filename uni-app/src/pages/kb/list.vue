@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { fetchPublicKbList } from '@/api/kb'
+import { getStoredUser, logout, requireAuth } from '@/utils/auth'
 import type { PublicKbItem } from '@/types'
 
 const loading = ref(false)
 const items = ref<PublicKbItem[]>([])
+const user = ref(getStoredUser())
 
 async function loadList() {
+  if (!requireAuth()) return
   loading.value = true
   try {
     const data = await fetchPublicKbList()
@@ -24,14 +27,21 @@ function openChat(item: PublicKbItem) {
   })
 }
 
+function handleLogout() {
+  logout()
+}
+
 onMounted(loadList)
 </script>
 
 <template>
   <view class="page">
-    <view class="hero">
-      <text class="hero-title">智问 · AI 知识库</text>
-      <text class="hero-sub">选择知识库，开始智能问答</text>
+    <view class="top-bar">
+      <view>
+        <text class="hello">你好，{{ user?.nickname || user?.username || '用户' }}</text>
+        <text class="tip">选择知识库开始问答</text>
+      </view>
+      <text class="logout" @click="handleLogout">退出</text>
     </view>
 
     <view v-if="loading" class="state">加载中...</view>
@@ -56,20 +66,28 @@ onMounted(loadList)
   background: linear-gradient(180deg, #eef4ff 0%, #f5f7fa 240rpx);
   padding: 24rpx;
 }
-.hero {
-  padding: 32rpx 8rpx 24rpx;
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16rpx 8rpx 24rpx;
 }
-.hero-title {
+.hello {
   display: block;
-  font-size: 40rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #1a1a2e;
 }
-.hero-sub {
+.tip {
   display: block;
-  margin-top: 8rpx;
-  font-size: 26rpx;
+  margin-top: 6rpx;
+  font-size: 24rpx;
   color: #909399;
+}
+.logout {
+  font-size: 26rpx;
+  color: #409eff;
+  padding: 8rpx 0;
 }
 .state {
   text-align: center;

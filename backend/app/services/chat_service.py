@@ -12,6 +12,8 @@ from app.models.chat_session import ChatSession
 from app.models.knowledge_base import KnowledgeBase
 from app.schemas.chat import ChatAskResponse, ReferenceItem
 from app.services.ai_config_service import resolve_effective_ai_credentials
+from app.services.ai_cost import estimate_cost, estimate_tokens_from_text
+from app.services.ai_quota_service import assert_user_within_daily_quota, record_ai_usage
 from app.services.llm_service import chat_completion, stream_chat_completion
 from app.services.rag_service import build_context, build_references, retrieve_chunks
 
@@ -47,6 +49,13 @@ def _normalize_title(question: str) -> str:
     return title[:128] if len(title) > 128 else title
 
 
+def _estimate_chat_cost(question: str, context: str, answer: str) -> tuple[int, int]:
+    embed_tokens = estimate_tokens_from_text(question)
+    prompt_text = question + context + answer
+    llm_tokens = estimate_tokens_from_text(prompt_text) + 80
+    return llm_tokens, embed_tokens
+
+
 def _get_or_create_session(
     db: Session,
     *,
@@ -55,6 +64,7 @@ def _get_or_create_session(
     question: str,
     client_type: str | None,
     client_ip: str | None,
+    user: AdminUser | None = None,
 ) -> ChatSession:
     if session_id:
         session = db.scalar(
@@ -73,6 +83,7 @@ def _get_or_create_session(
         title=_normalize_title(question),
         client_type=client_type,
         client_ip=client_ip,
+        user_id=user.id if user else None,
     )
     db.add(session)
     db.commit()
@@ -99,6 +110,7 @@ def ask_question(
         get_kb_or_404(db, kb_id)
     started = time.perf_counter()
     credentials = resolve_effective_ai_credentials(db, user)
+    assert_user_within_daily_quota(db, user, extra_cost=0.05)
 
     session = _get_or_create_session(
         db,
@@ -107,6 +119,7 @@ def ask_question(
         question=question,
         client_type=client_type,
         client_ip=client_ip,
+        user=user,
     )
 
     retrieved = retrieve_chunks(db, kb_id, question, credentials=credentials)
@@ -114,6 +127,9 @@ def ask_question(
     references = build_references(retrieved)
     answer, model = chat_completion(question, context, credentials=credentials)
     latency_ms = int((time.perf_counter() - started) * 1000)
+
+    llm_tokens, embed_tokens = _estimate_chat_cost(question, context, answer)
+    record_ai_usage(db, user, llm_tokens=llm_tokens, embedding_tokens=embed_tokens)
 
     db.add(
         ChatMessage(
@@ -152,7 +168,7 @@ def stream_question(
     client_ip: str | None = None,
     require_public: bool = True,
     user: AdminUser | None = None,
-) -> tuple[ChatSession, list[dict], Iterator[str], float, str | None]:
+) -> tuple[ChatSession, list[dict], Iterator[str], float, str | None, str]:
     if require_public:
         get_public_kb_or_404(db, kb_id)
     else:
@@ -161,6 +177,7 @@ def stream_question(
         get_kb_or_404(db, kb_id)
     started = time.perf_counter()
     credentials = resolve_effective_ai_credentials(db, user)
+    assert_user_within_daily_quota(db, user, extra_cost=0.05)
 
     session = _get_or_create_session(
         db,
@@ -169,6 +186,7 @@ def stream_question(
         question=question,
         client_type=client_type,
         client_ip=client_ip,
+        user=user,
     )
 
     retrieved = retrieve_chunks(db, kb_id, question, credentials=credentials)
@@ -180,7 +198,7 @@ def stream_question(
 
     stream = stream_chat_completion(question, context, credentials=credentials)
     model = credentials.llm_model if credentials else None
-    return session, references, stream, started, model
+    return session, references, stream, started, model, context
 
 
 def save_stream_answer(
@@ -191,7 +209,15 @@ def save_stream_answer(
     references: list[dict],
     model: str | None,
     latency_ms: int,
+    question: str = "",
+    context: str = "",
 ) -> None:
+    session = db.get(ChatSession, session_id)
+    user = db.get(AdminUser, session.user_id) if session and session.user_id else None
+    if user and question:
+        llm_tokens, embed_tokens = _estimate_chat_cost(question, context, answer)
+        record_ai_usage(db, user, llm_tokens=llm_tokens, embedding_tokens=embed_tokens)
+
     db.add(
         ChatMessage(
             session_id=session_id,

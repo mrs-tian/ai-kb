@@ -7,7 +7,7 @@ BACKEND="$APP_ROOT/backend"
 PYTHON="/opt/miniconda3/bin/python3.11"
 
 echo "[1/8] 准备目录..."
-mkdir -p "$APP_ROOT/www" "$BACKEND/data" "$BACKEND/uploads" /var/www/certbot
+mkdir -p "$APP_ROOT/www" "$APP_ROOT/h5" "$BACKEND/data" "$BACKEND/uploads" /var/www/certbot
 
 echo "[2/8] Python 虚拟环境..."
 if [ ! -d "$BACKEND/.venv" ]; then
@@ -62,9 +62,30 @@ EOF
     --non-interactive --agree-tos --register-unsafely-without-email
   rm -f /etc/nginx/conf.d/ai-kb-demo-temp.conf
 fi
+if [ ! -f "/etc/letsencrypt/live/www.easytransfer.top/fullchain.pem" ]; then
+  cat >/etc/nginx/conf.d/ai-kb-www-temp.conf <<'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.easytransfer.top;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 200 'ok'; add_header Content-Type text/plain; }
+}
+EOF
+  nginx -t && systemctl reload nginx
+  certbot certonly --webroot -w /var/www/certbot -d www.easytransfer.top \
+    --non-interactive --agree-tos --register-unsafely-without-email || true
+  rm -f /etc/nginx/conf.d/ai-kb-www-temp.conf
+fi
 
 echo "[7/8] Nginx..."
 cp "$APP_ROOT/deploy/nginx-un.easytransfer.conf" /etc/nginx/conf.d/ai-kb-demo.conf
+if [ -f "/etc/letsencrypt/live/www.easytransfer.top/fullchain.pem" ]; then
+  cp "$APP_ROOT/deploy/nginx-www.easytransfer.conf" /etc/nginx/conf.d/ai-kb-www.conf
+else
+  echo "WARN: www.easytransfer.top 证书未就绪，跳过 H5 Nginx 配置"
+  rm -f /etc/nginx/conf.d/ai-kb-www.conf
+fi
 nginx -t
 systemctl reload nginx
 

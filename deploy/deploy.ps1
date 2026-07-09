@@ -43,5 +43,5 @@ ssh -p $SSH_PORT $SERVER "curl -sf http://127.0.0.1:8001/health; echo; systemctl
 
 Write-Host ""
 Write-Host "部署完成: https://un.easytransfer.top"
+Write-Host "H5: https://www.easytransfer.top"
 Write-Host "SSH 免密: ssh -p 22 root@59.110.10.135"
-Write-Host "Default login: admin / demo123456 - please change ASAP"

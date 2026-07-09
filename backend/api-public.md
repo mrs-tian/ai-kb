@@ -1,9 +1,8 @@
 # C 端公开 API 接口文档
 
 > 前缀：`/api/public`  
-> **无需管理员登录**（Demo 阶段）  
-> 供 uni-app / H5 调用  
-> 生产建议：Referer 校验、IP 限流、可选 `X-Client-Key`
+> **需管理员 JWT 登录**（与 `/api/admin/auth/login` 共用账号）  
+> 供 uni-app / H5 调用
 
 ---
 
@@ -11,10 +10,11 @@
 
 | 措施 | 说明 |
 |------|------|
+| 认证 | Header `Authorization: Bearer <token>`，后台 `admin_user` 账号 |
 | 限流 | 每 IP 每分钟 `PUBLIC_RATE_LIMIT` 次（见 config.md） |
 | 可见范围 | 仅 `is_public=true` 且 `status=active` 的知识库 |
+| AI Key | 使用**当前登录用户**已配置的 API Key（非 `PUBLIC_AI_USERNAME`） |
 | 会话 | 客户端传 `session_id` 续聊；不传则新建 |
-| 敏感词 | Demo 可省略；生产可加简单过滤 |
 
 ---
 

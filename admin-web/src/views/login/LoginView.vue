@@ -70,8 +70,6 @@ async function handleSubmit() {
           登录
         </el-button>
       </el-form>
-
-      <p class="hint">Demo 默认管理员：admin / demo123456</p>
     </el-card>
   </div>
 </template>
@@ -131,11 +129,5 @@ h1 {
 .submit-btn {
   width: 100%;
   margin-top: 4px;
-}
-.hint {
-  margin: 16px 0 0;
-  text-align: center;
-  color: #909399;
-  font-size: 12px;
 }
 </style>

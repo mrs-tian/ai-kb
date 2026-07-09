@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db
+from app.core.deps import get_current_admin, get_db
 from app.core.rate_limit import check_public_rate_limit
+from app.models.admin_user import AdminUser
 from app.schemas.chat import (
     ChatAskRequest,
     ChatAskResponse,
@@ -23,7 +24,11 @@ from app.services.chat_service import (
     stream_question,
 )
 
-router = APIRouter(prefix="/public/chat", tags=["public-chat"])
+router = APIRouter(
+    prefix="/public/chat",
+    tags=["public-chat"],
+    dependencies=[Depends(get_current_admin)],
+)
 
 
 def _client_ip(request: Request) -> str:
@@ -40,6 +45,7 @@ def public_chat(
     body: ChatAskRequest,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(get_current_admin),
     x_client_type: str | None = Header(None, alias="X-Client-Type"),
 ) -> ApiResponse[ChatAskResponse]:
     check_public_rate_limit(_client_ip(request))
@@ -50,6 +56,7 @@ def public_chat(
         session_id=body.session_id,
         client_type=x_client_type,
         client_ip=_client_ip(request),
+        user=current_user,
     )
     return ApiResponse(data=data)
 
@@ -59,17 +66,19 @@ def public_chat_stream(
     body: ChatAskRequest,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: AdminUser = Depends(get_current_admin),
     x_client_type: str | None = Header(None, alias="X-Client-Type"),
 ) -> StreamingResponse:
     check_public_rate_limit(_client_ip(request))
 
-    session, references, stream, started, model = stream_question(
+    session, references, stream, started, model, context = stream_question(
         db,
         kb_id=body.kb_id,
         question=body.question,
         session_id=body.session_id,
         client_type=x_client_type,
         client_ip=_client_ip(request),
+        user=current_user,
     )
 
     def event_stream() -> Iterator[str]:
@@ -92,6 +101,8 @@ def public_chat_stream(
             references=references,
             model=model,
             latency_ms=latency_ms,
+            question=body.question,
+            context=context,
         )
         yield _format_sse("references", {"references": references})
         yield _format_sse("done", {"latency_ms": latency_ms})
@@ -106,6 +117,7 @@ def public_chat_stream(
 def public_session_messages(
     session_id: str,
     db: Session = Depends(get_db),
+    _user: AdminUser = Depends(get_current_admin),
 ) -> ApiResponse[ChatSessionMessagesResponse]:
     session, messages = get_session_messages(db, session_id)
     data = ChatSessionMessagesResponse(

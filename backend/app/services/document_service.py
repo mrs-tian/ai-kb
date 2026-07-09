@@ -10,6 +10,8 @@ from app.models.admin_user import AdminUser
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.ai_config_service import resolve_effective_ai_credentials
+from app.services.ai_cost import estimate_cost
+from app.services.ai_quota_service import assert_user_within_daily_quota, record_ai_usage
 from app.services.chunk_service import estimate_token_count, split_text
 from app.services.embedding_service import create_embeddings
 from app.services.kb_service import get_kb_or_404, refresh_kb_stats
@@ -133,6 +135,11 @@ def process_document(
         db.flush()
 
         credentials = resolve_effective_ai_credentials(db, user)
+        if user and chunk_models:
+            embed_tokens = sum(chunk.token_count for chunk in chunk_models)
+            projected = estimate_cost(0, embed_tokens)
+            assert_user_within_daily_quota(db, user, extra_cost=projected)
+
         embeddings = create_embeddings(
             [chunk.content for chunk in chunk_models],
             credentials=credentials,
@@ -140,6 +147,9 @@ def process_document(
         if embeddings:
             for chunk, embedding in zip(chunk_models, embeddings, strict=True):
                 chunk.embedding = embedding
+            if user:
+                embed_tokens = sum(chunk.token_count for chunk in chunk_models)
+                record_ai_usage(db, user, embedding_tokens=embed_tokens)
 
         document.char_count = char_count
         document.status = "ready"

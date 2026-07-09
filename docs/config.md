@@ -12,7 +12,7 @@ ai-kb-demo/
 ├── docs/           # 项目级文档（本文件、执行计划）
 ├── backend/        # Python FastAPI 后端 → 见 backend/README.md
 ├── admin-web/      # Vue3 管理后台 → 见 admin-web/README.md
-└── uni-app/        # 移动端（后续）→ 见 uni-app/README.md
+└── uni-app/        # C 端 H5 / 小程序 → 见 uni-app/README.md
 ```
 
 ---
@@ -20,10 +20,10 @@ ai-kb-demo/
 ## 环境地址
 
 
-| 环境    | API                               | 管理后台                              |
-| ----- | --------------------------------- | --------------------------------- |
-| local | `http://127.0.0.1:8000`           | `http://localhost:5173`           |
-| prod  | `https://un.easytransfer.top/api` | `https://un.easytransfer.top`     |
+| 环境    | API                               | 管理后台                              | uni-app H5                          |
+| ----- | --------------------------------- | --------------------------------- | ----------------------------------- |
+| local | `http://127.0.0.1:8000`           | `http://localhost:5173`           | `http://127.0.0.1:5174`（开发，可直连生产 API） |
+| prod  | `https://un.easytransfer.top/api` | `https://un.easytransfer.top`     | `https://www.easytransfer.top`      |
 
 
 ---
@@ -49,7 +49,8 @@ ai-kb-demo/
 | 服务器 IP | `59.110.10.135` |
 | SSH 用户 | `root` |
 | SSH 端口 | **22**（8777 非 SSH，网站也不用 8777） |
-| 域名 | https://un.easytransfer.top/ |
+| 域名 | https://un.easytransfer.top/（管理后台 + API） |
+| H5 域名 | https://www.easytransfer.top/（uni-app C 端） |
 | SSH 免密 | 本机 `~/.ssh/id_ed25519.pub` 已写入 `authorized_keys` |
 
 ### 生产服务器目录（代码 & 数据）
@@ -62,13 +63,18 @@ ai-kb-demo/
 | **后端环境变量** | `/srv/ai-kb-demo/backend/.env` |
 | **数据库文件（SQLite）** | `/srv/ai-kb-demo/backend/data/app.db` |
 | **上传文件目录** | `/srv/ai-kb-demo/backend/uploads/` |
-| **前端静态页（Nginx root）** | `/srv/ai-kb-demo/www/` |
+| **管理后台静态页（Nginx root）** | `/srv/ai-kb-demo/www/` |
+| **uni-app H5 静态页（Nginx root）** | `/srv/ai-kb-demo/h5/` |
 | **Alembic 迁移脚本** | `/srv/ai-kb-demo/backend/alembic/` |
 | **部署配置（Nginx/systemd）** | `/srv/ai-kb-demo/deploy/` |
-| **Nginx 站点配置（已链接）** | `/etc/nginx/conf.d/ai-kb-demo.conf` |
+| **Nginx 管理端站点** | `/etc/nginx/conf.d/ai-kb-demo.conf` |
+| **Nginx H5 站点** | `/etc/nginx/conf.d/ai-kb-www.conf` |
 | **systemd 服务单元** | `/etc/systemd/system/ai-kb-api.service` |
-| **SSL 证书** | `/etc/letsencrypt/live/un.easytransfer.top/` |
+| **SSL 证书（管理端）** | `/etc/letsencrypt/live/un.easytransfer.top/` |
+| **SSL 证书（H5）** | `/etc/letsencrypt/live/www.easytransfer.top/` |
 | **后端监听（仅本机）** | `127.0.0.1:8001` |
+
+> **H5 部署说明：** 本地 `npm run build:h5` 产物在 `uni-app/dist/build/h5/`，上传至服务器 `/srv/ai-kb-demo/h5/`。`www.easytransfer.top` 的 `/api/` 反代到 `127.0.0.1:8001`，与 `un.easytransfer.top` 共用同一后端与 SQLite 库。
 
 > **数据库说明：** 生产环境使用 SQLite 单文件库，部署时执行 `alembic upgrade head` 建表，并通过 `scripts/seed_demo_data.py` 填充 Demo 数据。数据库与代码在同一台服务器，**不是**独立 MySQL 实例。若后续要切 MySQL，只需改 `.env` 中 `DATABASE_URL` 并重新迁移。
 
@@ -76,7 +82,8 @@ ai-kb-demo/
 
 | 域名 | 后端端口 | 目录 | 服务名 |
 |------|---------|------|--------|
-| `un.easytransfer.top` | 8001 | `/srv/ai-kb-demo/` | `ai-kb-api` |
+| `un.easytransfer.top` | 8001 | `/srv/ai-kb-demo/`（`www/` 管理端） | `ai-kb-api` |
+| `www.easytransfer.top` | 8001（反代） | `/srv/ai-kb-demo/h5/`（uni-app H5） | `ai-kb-api` |
 | `admin.easytransfer.top` | 8000 | `/srv/xt18/` | `xt18-api` |
 | `ui.easytransfer.top` | 7001 | `/srv/stc-ui/` | `stc-ui-backend` |
 
@@ -244,19 +251,13 @@ npm install && npm run dev
 ```bash
 cd D:\ai-kb-demo\uni-app
 npm install
-npm run dev:h5          # http://localhost:5174
+npm run dev:h5          # http://127.0.0.1:5174
+npm run build:h5        # 产物 → uni-app/dist/build/h5/
 npm run dev:mp-weixin   # 微信开发者工具打开 dist/dev/mp-weixin
 ```
 
-> C 端问答复用 `admin` 账号在管理端配置的 AI Key（`PUBLIC_AI_USERNAME=admin`）。  
-> 生产 H5 API：`https://un.easytransfer.top`（见 `uni-app/.env.production`）。
-
-**uni-app（后续）**
-
-```bash
-cd D:\ai-kb-demo\uni-app
-npm install && npm run dev:h5
-```
+> 生产 H5 访问 `https://www.easytransfer.top`，API 同域 `/api`（见 `uni-app/.env.production`）。  
+> 知识库功能需登录后台账号；问答使用**当前登录用户**自配的 AI Key。
 
 ---
 
@@ -271,24 +272,28 @@ powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1
 
 ```bash
 # 服务器上手动更新（已上传代码后）
-SEED_DEMO=1 bash /srv/ai-kb-demo/deploy/setup_server.sh
+SEED_DEMO=0 bash /srv/ai-kb-demo/deploy/setup_server.sh
+
+# 仅更新 H5 静态页（本地 build 后）
+# scp -r uni-app/dist/build/h5/* root@59.110.10.135:/srv/ai-kb-demo/h5/
 
 # 健康检查
 curl https://un.easytransfer.top/health
+curl -I https://www.easytransfer.top/
 systemctl status ai-kb-api
 ```
 
-**隔离说明：** 本项目的 Nginx `server_name` 为 `un.easytransfer.top`，后端端口 **8001**；不修改 `admin.easytransfer.top`（xt18 / 8000）、`ui.easytransfer.top`（stc-ui / 7001）等既有配置。
+**隔离说明：** 管理端 Nginx 为 `un.easytransfer.top`，H5 为 `www.easytransfer.top`，后端均反代 **8001**；不修改 `admin.easytransfer.top`（xt18 / 8000）、`ui.easytransfer.top`（stc-ui / 7001）等既有配置。
 
 ---
 
 
 
-## 小程序 / H5（后续）
+## 小程序（后续）
 
 - 个人主体 + ICP 备案 + 体验版扫码  
-- H5 需备案域名  
-- 执行顺序见 `[execution-plan.md](./execution-plan.md)`
+- H5 已部署：`https://www.easytransfer.top/`  
+- 执行顺序见 [execution-plan.md](./execution-plan.md)
 
 ---
 

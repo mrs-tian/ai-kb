@@ -11,7 +11,7 @@
 |----|-----|
 | **当前阶段** | Phase 6 — uni-app |
 | **下一步** | Phase 7：小程序体验版（可选） |
-| **最后更新** | 2026-07-07 |
+| **最后更新** | 2026-07-09 |
 | **编码状态** | uni-app H5/小程序页面已完成，对接 public API |
 
 ---
@@ -69,9 +69,10 @@
 ### Phase 6 — uni-app
 
 - [x] 补充 uni-app 文档（README / pages-modules / api-integration）
-- [x] H5 + 小程序页面（知识库列表、AI 对话）
-- [x] 对接 public API（非流式问答 + 引用 + 会话续聊）
-- [x] C 端 AI Key fallback（`PUBLIC_AI_USERNAME=admin`）
+- [x] H5 + 小程序页面（宣传首页、登录、知识库、AI 对话）
+- [x] 对接生产 API + JWT 登录，知识库功能需后台账号
+- [x] H5 部署至 https://www.easytransfer.top
+- [x] 单账号 AI 日消耗上限 1 元
 - [x] **验收：** `npm run build:h5` 通过
 
 ### Phase 7 — 小程序体验版（可选）

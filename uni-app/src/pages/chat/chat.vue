@@ -9,6 +9,7 @@ import {
   getStoredSessionId,
   saveSessionId,
 } from '@/api/chat'
+import { requireAuth } from '@/utils/auth'
 import type { ChatUiMessage, ReferenceItem } from '@/types'
 
 const kbId = ref(0)
@@ -42,6 +43,7 @@ async function loadHistory() {
 }
 
 onLoad((query) => {
+  if (!requireAuth()) return
   kbId.value = Number(query?.kbId || 0)
   kbName.value = decodeURIComponent(String(query?.kbName || '知识库'))
   uni.setNavigationBarTitle({ title: kbName.value })

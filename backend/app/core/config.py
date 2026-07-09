@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     admin_password: str = "demo123456"
     public_rate_limit: int = 30
     public_ai_username: str = "admin"
+    ai_daily_cost_limit_yuan: float = 1.0
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
     @property
